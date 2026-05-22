@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BI Local Demo — Visão Comercial</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.08);
+    --text: #1a1a18;
+    --text2: #6b6b66;
+    --text3: #9b9b94;
+    --accent: #1d9e75;
+    --accent2: #0f6e56;
+    --amber: #ba7517;
+    --red: #a32d2d;
+    --blue: #185fa5;
+    --purple: #534ab7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'Segoe UI', system-ui, sans-serif; color: var(--text); font-size: 14px; }
+
+  /* HEADER */
+  .header { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-weight: 600; font-size: 15px; letter-spacing: -0.3px; color: var(--text); }
+  .logo span { color: var(--accent); }
+  .nav { display: flex; gap: 4px; }
+  .nav button { background: none; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all .15s; }
+  .nav button:hover { background: var(--surface2); color: var(--text); }
+  .nav button.active { background: var(--accent); color: #fff; font-weight: 500; }
+  .badge { font-size: 11px; background: var(--surface2); color: var(--text2); padding: 3px 10px; border-radius: 20px; border: 0.5px solid var(--border); }
+
+  /* LAYOUT */
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+  .kpi { background: var(--surface); border-radius: 10px; border: 0.5px solid var(--border); padding: 1rem 1.25rem; }
+  .kpi-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .kpi-up { color: var(--accent); }
+  .kpi-down { color: var(--red); }
+
+  /* GRID 2 COL */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 2rem; }
+  @media(max-width:700px){ .grid2 { grid-template-columns: 1fr; } }
+
+  /* CARD */
+  .card { background: var(--surface); border-radius: 10px; border: 0.5px solid var(--border); padding: 1.25rem; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: .4px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; color: var(--text2); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; padding: 8px 12px; border-bottom: 0.5px solid var(--border); background: var(--surface2); }
+  td { padding: 10px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* PILLS */
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .pill-green { background: #eaf3de; color: #3b6d11; }
+  .pill-amber { background: #faeeda; color: #854f0b; }
+  .pill-red { background: #fcebeb; color: #a32d2d; }
+  .pill-blue { background: #e6f1fb; color: #185fa5; }
+
+  /* BARS */
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-label { width: 80px; font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width .6s ease; }
+  .bar-val { font-size: 12px; color: var(--text); width: 56px; text-align: right; flex-shrink: 0; }
+
+  /* FILTER BAR */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .filter-bar select, .filter-bar input { padding: 6px 12px; border-radius: 6px; border: 0.5px solid var(--border); background: var(--surface); font-size: 13px; color: var(--text); }
+  .filter-bar input { min-width: 180px; }
+
+  /* UNIT CARD */
+  .unit-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+  .unit-card { background: var(--surface); border-radius: 10px; border: 0.5px solid var(--border); padding: 1rem 1.25rem; cursor: pointer; transition: all .15s; }
+  .unit-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .unit-card.selected { border-color: var(--accent); border-width: 1.5px; }
+  .unit-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .unit-meta { font-size: 12px; color: var(--text2); }
+  .unit-kpi { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
+  .unit-kpi-item { text-align: center; }
+  .unit-kpi-val { font-size: 16px; font-weight: 600; color: var(--text); }
+  .unit-kpi-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .4px; }
+
+  /* FOOTER */
+  .footer { text-align: center; padding: 2rem; font-size: 11px; color: var(--text3); border-top: 0.5px solid var(--border); margin-top: 3rem; }
+  .footer a { color: var(--accent2); text-decoration: none; }
+
+  /* NOTE BOX */
+  .note { background: #eaf3de; border-left: 3px solid var(--accent); padding: .75rem 1rem; border-radius: 0 8px 8px 0; font-size: 13px; color: #3b6d11; margin-bottom: 1.5rem; }
+
+  h2.section-title { font-size: 18px; font-weight: 600; letter-spacing: -.3px; margin-bottom: 1.5rem; color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">BI<span>Local</span> &mdash; Demo Comercial</div>
+  <nav class="nav">
+    <button class="active" onclick="showSection('geral', this)">Visão Geral</button>
+    <button onclick="showSection('unidades', this)">Unidades</button>
+    <button onclick="showSection('clientes', this)">Clientes</button>
+    <button onclick="showSection('sobre', this)">Sobre</button>
+  </nav>
+  <div class="badge">Dados sintéticos — Demo</div>
+</div>
+
+<div class="container">
+
+  <!-- VISÃO GERAL -->
+  <div id="geral" class="section active">
+    <div class="note">📊 Este é um dashboard de demonstração com dados sintéticos, gerado por script Python a partir de um Data Lake local. Todos os gráficos, tabelas e drills são navegáveis.</div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Receita Total</div>
+        <div class="kpi-value">R$ 4,8M</div>
+        <div class="kpi-sub kpi-up">▲ 12% vs período anterior</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Clientes Ativos</div>
+        <div class="kpi-value">247</div>
+        <div class="kpi-sub kpi-up">▲ 18 novos no período</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Taxa Inadimplência</div>
+        <div class="kpi-value">4,2%</div>
+        <div class="kpi-sub kpi-down">▼ -0,8pp vs anterior</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ticket Médio</div>
+        <div class="kpi-value">R$ 19,4K</div>
+        <div class="kpi-sub kpi-up">▲ 6% vs período anterior</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">NPS Médio</div>
+        <div class="kpi-value">71</div>
+        <div class="kpi-sub">Meta: 65 ✓</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Receita por Unidade (R$ mil)</div>
+        <div style="position:relative;height:220px">
+          <canvas id="chartUnidades" role="img" aria-label="Receita por unidade de negócio">Sul: 1.420, Sudeste: 1.850, Centro-Oeste: 780, Norte/NE: 750.</canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Evolução Mensal da Receita (R$ mil)</div>
+        <div style="position:relative;height:220px">
+          <canvas id="chartMensal" role="img" aria-label="Evolução mensal da receita">Jan a Jun com crescimento contínuo.</canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Receita por Segmento</div>
+        <div id="segBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Distribuição por Estágio CS</div>
+        <div style="position:relative;height:200px">
+          <canvas id="chartCS" role="img" aria-label="Distribuição por estágio de CS">Onboarding, Adoção, Expansão, Risco, Saudável.</canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNIDADES -->
+  <div id="unidades" class="section">
+    <h2 class="section-title">Unidades de Negócio</h2>
+    <div class="unit-cards" id="unitCards"></div>
+    <div class="card" id="unitDetail">
+      <div class="card-title" id="unitDetailTitle">Selecione uma unidade acima para ver o detalhe</div>
+      <div id="unitDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div id="clientes" class="section">
+    <h2 class="section-title">Base de Clientes</h2>
+    <div class="filter-bar">
+      <input type="text" id="searchInput" placeholder="Buscar cliente ou CNPJ..." oninput="filterTable()">
+      <select id="filterUnidade" onchange="filterTable()">
+        <option value="">Todas as unidades</option>
+        <option>Sul</option><option>Sudeste</option><option>Centro-Oeste</option><option>Norte/NE</option>
+      </select>
+      <select id="filterSegmento" onchange="filterTable()">
+        <option value="">Todos os segmentos</option>
+        <option>Indústria</option><option>Varejo</option><option>Serviços</option><option>Agro</option><option>Tech</option>
+      </select>
+      <select id="filterStatus" onchange="filterTable()">
+        <option value="">Todos os status</option>
+        <option>Saudável</option><option>Atenção</option><option>Risco</option>
+      </select>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="clientTable">
+          <thead>
+            <tr>
+              <th>CNPJ</th><th>Cliente</th><th>Unidade</th><th>Segmento</th>
+              <th>Receita</th><th>Inadimp.</th><th>NPS</th><th>Status CS</th>
+            </tr>
+          </thead>
+          <tbody id="clientBody"></tbody>
+        </table>
+      </div>
+      <div id="tableInfo" style="font-size:12px;color:var(--text3);margin-top:.75rem;text-align:right;"></div>
+    </div>
+  </div>
+
+  <!-- SOBRE -->
+  <div id="sobre" class="section">
+    <h2 class="section-title">Sobre este dashboard</h2>
+    <div class="card" style="max-width:700px;line-height:1.8;color:var(--text2);">
+      <p style="margin-bottom:1rem;font-size:14px;">Este é um <strong style="color:var(--text)">dashboard de demonstração</strong> criado para ilustrar o conceito de BI local desenvolvido em Python — tema do artigo <em>"Seu próprio sistema de BI — seguro, gratuito e rodando no seu computador"</em>.</p>
+      <p style="margin-bottom:1rem;font-size:14px;"><strong style="color:var(--text)">Dados:</strong> todos os CNPJs, nomes de empresas, valores e indicadores são <strong style="color:var(--text)">sintéticos</strong>, gerados aleatoriamente. Qualquer semelhança com dados reais é coincidência.</p>
+      <p style="margin-bottom:1rem;font-size:14px;"><strong style="color:var(--text)">Arquitetura real:</strong> em produção, este HTML é gerado automaticamente por um script Python que lê um banco SQLite (Data Warehouse), executa os cálculos de BI e exporta um arquivo por unidade de negócio — com apenas os dados daquela unidade.</p>
+      <p style="font-size:14px;"><strong style="color:var(--text)">Autor:</strong> <a href="https://www.linkedin.com/in/luciano-oliveira-56378125/" target="_blank">Luciano Oliveira</a> — Gerente Comercial &amp; Consultor</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Dashboard gerado por script Python &mdash; Data Warehouse: SQLite &mdash; Dados sintéticos para demonstração<br>
+  <a href="https://www.linkedin.com/in/luciano-oliveira-56378125/" target="_blank">Luciano Oliveira no LinkedIn</a>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const unidades = [
+  { nome: 'Sul', gerente: 'Ana Figueiredo', clientes: 64, receita: 1420, inadimplencia: 3.8, nps: 74, meta: 1350 },
+  { nome: 'Sudeste', gerente: 'Carlos Menezes', clientes: 89, receita: 1850, inadimplencia: 4.5, nps: 68, meta: 1700 },
+  { nome: 'Centro-Oeste', gerente: 'Patrícia Souza', clientes: 51, receita: 780, inadimplencia: 5.1, nps: 70, meta: 800 },
+  { nome: 'Norte/NE', gerente: 'Rodrigo Lima', clientes: 43, receita: 750, inadimplencia: 3.9, nps: 73, meta: 700 },
+];
+
+const segmentos = [
+  { nome: 'Indústria', receita: 1650, pct: 34 },
+  { nome: 'Varejo', receita: 1220, pct: 25 },
+  { nome: 'Serviços', receita: 980, pct: 21 },
+  { nome: 'Agro', receita: 580, pct: 12 },
+  { nome: 'Tech', receita: 370, pct: 8 },
+];
+
+const nomes = ['Grupo Alphaville Ind.','Comercial Bela Vista','Serviços Centrais Ltda','Agropecuária Santa Fé','Tech Solutions ME','Distribuidora Orion','Manufatura Planalto','Consultoria Vertex','Frigorífico Delta','Logística Express','Varejo Total','Biotech Soluções','Construtora Horizonte','Rede Alimentar','Softmax Sistemas','Grãos do Cerrado','Industrial Park','Móveis Qualidade','Saúde Integrada','Telecom Brasil','Plásticos Sul','Energia Verde','Educação Total','Transportes Ômega','Cerâmica do Vale'];
+const cnpjs = () => { const n = Math.floor(Math.random()*90000000)+10000000; const s = Math.floor(Math.random()*9000)+1000; return `${String(n).slice(0,2)}.${String(n).slice(2,5)}.${String(n).slice(5,8)}/${String(s).padStart(4,'0')}-01`; };
+
+const segs = ['Indústria','Varejo','Serviços','Agro','Tech'];
+const statuses = ['Saudável','Saudável','Saudável','Atenção','Risco'];
+
+let clientes = [];
+unidades.forEach(u => {
+  for(let i=0;i<u.clientes;i++){
+    const nome = nomes[Math.floor(Math.random()*nomes.length)] + ' ' + String.fromCharCode(65+Math.floor(Math.random()*26)) + '.';
+    clientes.push({
+      cnpj: cnpjs(),
+      nome,
+      unidade: u.nome,
+      segmento: segs[Math.floor(Math.random()*segs.length)],
+      receita: Math.round((Math.random()*80+5)*1000)/1000,
+      inadimplencia: parseFloat((Math.random()*12).toFixed(1)),
+      nps: Math.floor(Math.random()*60+30),
+      status: statuses[Math.floor(Math.random()*statuses.length)],
+    });
+  }
+});
+
+// ── NAV ──────────────────────────────────────────────────────────────
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='clientes') renderTable(clientes);
+  if(id==='unidades') renderUnits();
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────
+const colors = ['#1d9e75','#185fa5','#ba7517','#a32d2d','#534ab7'];
+
+new Chart(document.getElementById('chartUnidades'), {
+  type:'bar',
+  data:{
+    labels: unidades.map(u=>u.nome),
+    datasets:[
+      { label:'Realizado', data: unidades.map(u=>u.receita), backgroundColor: '#1d9e75', borderRadius: 4 },
+      { label:'Meta', data: unidades.map(u=>u.meta), backgroundColor: '#d3d1c7', borderRadius: 4 }
+    ]
+  },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{ x:{grid:{display:false}}, y:{beginAtZero:true, ticks:{callback:v=>'R$'+v+'K'}} } }
+});
+
+const meses = ['Jan','Fev','Mar','Abr','Mai','Jun'];
+new Chart(document.getElementById('chartMensal'), {
+  type:'line',
+  data:{
+    labels: meses,
+    datasets:[{
+      label:'Receita (R$ mil)', data:[620,680,730,780,820,870],
+      borderColor:'#1d9e75', backgroundColor:'rgba(29,158,117,.08)',
+      tension:.4, fill:true, pointRadius:4, pointBackgroundColor:'#1d9e75'
+    }]
+  },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{ x:{grid:{display:false}}, y:{beginAtZero:false, ticks:{callback:v=>'R$'+v+'K'}} } }
+});
+
+const segBarsEl = document.getElementById('segBars');
+const maxSeg = Math.max(...segmentos.map(s=>s.receita));
+segmentos.forEach((s,i) => {
+  segBarsEl.innerHTML += `<div class="bar-row">
+    <div class="bar-label">${s.nome}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${(s.receita/maxSeg*100).toFixed(0)}%;background:${colors[i]}"></div></div>
+    <div class="bar-val">R$${s.receita}K</div>
+  </div>`;
+});
+
+new Chart(document.getElementById('chartCS'), {
+  type:'doughnut',
+  data:{
+    labels:['Saudável','Em Adoção','Expansão','Atenção','Risco'],
+    datasets:[{ data:[52,18,14,10,6], backgroundColor:['#1d9e75','#185fa5','#534ab7','#ba7517','#a32d2d'], borderWidth:0 }]
+  },
+  options:{ responsive:true, maintainAspectRatio:false, cutout:'68%',
+    plugins:{ legend:{ position:'right', labels:{ font:{size:12}, boxWidth:10, padding:12 } } } }
+});
+
+// ── UNIDADES ──────────────────────────────────────────────────────────
+function renderUnits() {
+  const el = document.getElementById('unitCards');
+  el.innerHTML = '';
+  unidades.forEach(u => {
+    const atingido = u.receita >= u.meta;
+    el.innerHTML += `<div class="unit-card" onclick="showUnit('${u.nome}', this)">
+      <div class="unit-name">${u.nome}</div>
+      <div class="unit-meta">${u.gerente}</div>
+      <div class="unit-kpi">
+        <div class="unit-kpi-item"><div class="unit-kpi-val">R$ ${u.receita}K</div><div class="unit-kpi-lbl">Receita</div></div>
+        <div class="unit-kpi-item"><div class="unit-kpi-val" style="color:${atingido?'#1d9e75':'#a32d2d'}">${atingido?'✓':'✗'} Meta</div><div class="unit-kpi-lbl">R$ ${u.meta}K</div></div>
+        <div class="unit-kpi-item"><div class="unit-kpi-val">${u.clientes}</div><div class="unit-kpi-lbl">Clientes</div></div>
+        <div class="unit-kpi-item"><div class="unit-kpi-val">${u.nps}</div><div class="unit-kpi-lbl">NPS</div></div>
+      </div>
+    </div>`;
+  });
+}
+
+function showUnit(nome, el) {
+  document.querySelectorAll('.unit-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  const u = unidades.find(x=>x.nome===nome);
+  const uClientes = clientes.filter(c=>c.unidade===nome);
+  document.getElementById('unitDetailTitle').textContent = `Detalhes — ${nome}`;
+  const rows = uClientes.slice(0,8).map(c=>`
+    <tr><td>${c.cnpj}</td><td>${c.nome}</td><td>${c.segmento}</td>
+    <td>R$ ${c.receita.toFixed(1)}K</td>
+    <td>${c.inadimplencia}%</td>
+    <td><span class="pill ${c.status==='Saudável'?'pill-green':c.status==='Atenção'?'pill-amber':'pill-red'}">${c.status}</span></td>
+    </tr>`).join('');
+  document.getElementById('unitDetailContent').innerHTML = `
+    <table><thead><tr><th>CNPJ</th><th>Cliente</th><th>Segmento</th><th>Receita</th><th>Inadimp.</th><th>Status CS</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div style="font-size:12px;color:var(--text3);margin-top:.5rem">Mostrando 8 de ${uClientes.length} clientes da unidade ${nome}</div>`;
+}
+
+// ── CLIENTES TABLE ────────────────────────────────────────────────────
+function renderTable(data) {
+  const tbody = document.getElementById('clientBody');
+  tbody.innerHTML = data.map(c=>`<tr>
+    <td style="font-family:monospace;font-size:12px">${c.cnpj}</td>
+    <td>${c.nome}</td>
+    <td>${c.unidade}</td>
+    <td>${c.segmento}</td>
+    <td>R$ ${c.receita.toFixed(1)}K</td>
+    <td style="color:${c.inadimplencia>8?'#a32d2d':c.inadimplencia>4?'#ba7517':'inherit'}">${c.inadimplencia}%</td>
+    <td>${c.nps}</td>
+    <td><span class="pill ${c.status==='Saudável'?'pill-green':c.status==='Atenção'?'pill-amber':'pill-red'}">${c.status}</span></td>
+  </tr>`).join('');
+  document.getElementById('tableInfo').textContent = `${data.length} clientes encontrados`;
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const u = document.getElementById('filterUnidade').value;
+  const s = document.getElementById('filterSegmento').value;
+  const st = document.getElementById('filterStatus').value;
+  const filtered = clientes.filter(c =>
+    (!q || c.nome.toLowerCase().includes(q) || c.cnpj.includes(q)) &&
+    (!u || c.unidade === u) &&
+    (!s || c.segmento === s) &&
+    (!st || c.status === st)
+  );
+  renderTable(filtered);
+}
+</script>
+</body>
+</html>
