@@ -1,0 +1,5 @@
+# Copie para .dev.vars (fora do Git). Local: entra sem Google em http://localhost:8787/api/auth/dev?email=<e-mail da lista>
+AMBIENTE=local
+SESSION_SECRET=troque-por-um-valor-aleatorio-de-32-caracteres-ou-mais
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bi-local",
+  "main": "worker/worker.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  // Um subdomínio por app, na zona fabricasaas.app (o DNS é criado pela Cloudflare ao publicar).
+  "routes": [{ "pattern": "bi-local.fabricasaas.app", "custom_domain": true }],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true // tudo passa pelo login; só manifest/ícones/sw são públicos (worker.js)
+  },
+  "observability": { "enabled": true },
+  "vars": {
+    "APP_NAME": "BI Local com Python",
+    "APP_ORIGIN": "https://bi-local.fabricasaas.app",
+    "AMBIENTE": "producao",
+    "ADMIN_EMAILS": "luciano.solucoes.tecnologia@gmail.com",
+    "USER_EMAILS": "lucianomlo@gmail.com"
+  }
+  // Segredos (nunca aqui): wrangler secret put GOOGLE_CLIENT_ID | GOOGLE_CLIENT_SECRET | SESSION_SECRET
+}
